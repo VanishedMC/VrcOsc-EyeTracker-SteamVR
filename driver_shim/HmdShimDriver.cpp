@@ -160,11 +160,6 @@ namespace {
                                             TLArg(leftYaw, "LeftYaw"),
                                             TLArg(rightPitch, "RightPitch"),
                                             TLArg(rightYaw, "RightYaw"));*/
-
-                    if (!(std::isnan(leftPitch) || std::isnan(leftYaw) || std::isnan(rightPitch) ||
-                          std::isnan(rightYaw))) {
-                        std::unique_lock lock(m_mutex);
-                    }
                 }
             } catch (osc::Exception& e) {
                 TraceLoggingWriteTagged(local, "VRChatOSCEyeTracker_ProcessMessage", TLArg(e.what(), "Error"));
@@ -179,7 +174,6 @@ namespace {
         vr::ITrackedDeviceServerDriver* const m_shimmedDevice;
         std::thread m_listeningThread;
         UdpListeningReceiveSocket m_socket;
-        mutable std::mutex m_mutex;
 
         vr::TrackedDeviceIndex_t m_deviceIndex = vr::k_unTrackedDeviceIndexInvalid;
 
