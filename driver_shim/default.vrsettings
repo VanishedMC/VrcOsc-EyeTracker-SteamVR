@@ -1,5 +1,5 @@
 {
-  "driver_PimaxEyeTracking": {
+  "driver_VrcOscEyeTracking": {
     "loadPriority": 1000
   }
 }

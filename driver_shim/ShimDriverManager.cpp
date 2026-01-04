@@ -29,9 +29,6 @@
 namespace {
     using namespace driver_shim;
 
-    pvrEnvHandle g_pvr = nullptr;
-    pvrSessionHandle g_pvrSession = nullptr;
-
     DEFINE_DETOUR_FUNCTION(bool,
                            IVRServerDriverHost_TrackedDeviceAdded,
                            vr::IVRServerDriverHost* driverHost,
@@ -51,7 +48,7 @@ namespace {
             TraceLoggingWriteTagged(local, "IVRServerDriverHost_TrackedDeviceAdded", TLArg(true, "IsTargetDriver"));
             if (eDeviceClass == vr::TrackedDeviceClass_HMD) {
                 DriverLog("Shimming new TrackedDeviceClass_HMD with HmdShimDriver");
-                shimmedDriver = CreateHmdShimDriver(pDriver, g_pvr, g_pvrSession);
+                shimmedDriver = CreateHmdShimDriver(pDriver);
             }
         }
 
@@ -67,14 +64,11 @@ namespace {
 
 namespace driver_shim {
 
-    void InstallShimDriverHook(pvrEnvHandle pvr, pvrSessionHandle pvrSession) {
+    void InstallShimDriverHook() {
         TraceLocalActivity(local);
         TraceLoggingWriteStart(local, "InstallShimDriverHook");
 
         DriverLog("Installing IVRServerDriverHost::TrackedDeviceAdded hook");
-
-        g_pvr = pvr;
-        g_pvrSession = pvrSession;
 
         // TODO: Consider hooking all flavors, though I doubt the driver_aapvr will change anytime soon.
         vr::EVRInitError eError;
@@ -93,7 +87,7 @@ namespace driver_shim {
         if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                                (LPCSTR)returnAddress,
                                &callerModule)) {
-            return callerModule == GetModuleHandleA("driver_aapvr.dll");
+            return callerModule == GetModuleHandleA("driver_lighthouse.dll");
         }
         return false;
     }

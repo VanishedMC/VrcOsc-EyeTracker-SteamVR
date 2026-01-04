@@ -26,6 +26,10 @@
 #include "DetourUtils.h"
 #include "Tracing.h"
 
+#include <osc/OscReceivedElements.h>
+#include <osc/OscPacketListener.h>
+#include <ip/UdpSocket.h>
+
 namespace {
     using namespace driver_shim;
 
@@ -37,9 +41,9 @@ namespace {
 
     // The HmdShimDriver driver wraps another ITrackedDeviceServerDriver instance with the intent to override
     // properties and behaviors.
-    struct HmdShimDriver : public vr::ITrackedDeviceServerDriver {
-        HmdShimDriver(vr::ITrackedDeviceServerDriver* shimmedDevice, pvrEnvHandle pvr, pvrSessionHandle pvrSession)
-            : m_shimmedDevice(shimmedDevice), m_pvr(pvr), m_pvrSession(pvrSession) {
+    struct HmdShimDriver : public vr::ITrackedDeviceServerDriver, osc::OscPacketListener {
+        HmdShimDriver(vr::ITrackedDeviceServerDriver* shimmedDevice)
+            : m_shimmedDevice(shimmedDevice), m_socket(IpEndpointName(IpEndpointName::ANY_ADDRESS, 9020), this) {
             TraceLocalActivity(local);
             TraceLoggingWriteStart(local, "HmdShimDriver_Ctor");
 
@@ -73,9 +77,8 @@ namespace {
             DriverLog("Eye Gaze Component: %lld", m_eyeTrackingComponent);
 
             // Schedule updates in a background thread.
-            // TODO: Can use a callback instead of a thread here, if available.
             m_active = true;
-            m_updateThread = std::thread(&HmdShimDriver::UpdateThread, this);
+            m_listeningThread = std::thread([&]() { m_socket.Run(); });
 
             TraceLoggingWriteStop(local, "HmdShimDriver_Activate");
 
@@ -87,7 +90,8 @@ namespace {
             TraceLoggingWriteStart(local, "HmdShimDriver_Deactivate", TLArg(m_deviceIndex, "ObjectId"));
 
             if (m_active.exchange(false)) {
-                m_updateThread.join();
+                m_socket.AsynchronousBreak();
+                m_listeningThread.join();
             }
 
             m_deviceIndex = vr::k_unTrackedDeviceIndexInvalid;
@@ -115,96 +119,81 @@ namespace {
             m_shimmedDevice->DebugRequest(pchRequest, pchResponseBuffer, unResponseBufferSize);
         }
 
-        void UpdateThread() {
+        void ProcessMessage(const osc::ReceivedMessage& m, const IpEndpointName& remoteEndpoint) override {
             TraceLocalActivity(local);
-            TraceLoggingWriteStart(local, "HmdShimDriver_UpdateThread");
-
-            DriverLog("Hello from HmdShimDriver::UpdateThread");
-            SetThreadDescription(GetCurrentThread(), L"HmdShimDriver_UpdateThread");
-
-            const vr::PropertyContainerHandle_t container =
-                vr::VRProperties()->TrackedDeviceToPropertyContainer(m_deviceIndex);
-
+            TraceLoggingWriteStart(local, "HmdShimDriver_OscMessage");
             vr::VREyeTrackingData_t data{};
-            while (true) {
-                // Wait for the next time to update.
-                {
-                    TraceLocalActivity(sleep);
-                    TraceLoggingWriteStart(sleep, "HmdShimDriver_UpdateThread_Sleep");
 
-                    // We refresh the data at this frequency.
-                    // TODO: Use event-based sleep/wake up if appropriate.
-                    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            try {
+                if (std::string_view(m.AddressPattern()) == "/tracking/eye/LeftRightPitchYaw") {
+                    osc::ReceivedMessageArgumentStream args = m.ArgumentStream();
 
-                    TraceLoggingWriteStop(sleep, "HmdShimDriver_UpdateThread_Sleep", TLArg(m_active.load(), "Active"));
+                    float leftPitch;
+                    float leftYaw;
+                    float rightPitch;
+                    float rightYaw;
+                    args >> leftPitch >> leftYaw >> rightPitch >> rightYaw >> osc::EndMessage;
 
-                    if (!m_active) {
-                        break;
-                    }
-                }
-
-                // Retrieve the data from the eye tracker and push it to the input component.
-                pvrEyeTrackingInfo state{};
-                pvrResult result = pvr_getEyeTrackingInfo(m_pvrSession, pvr_getTimeSeconds(m_pvr), &state);
-                TraceLoggingWriteTagged(local,
-                                        "HmdShimDriver_PvrEyeTrackingInfo",
-                                        TLArg((int)result, "Result"),
-                                        TLArg(state.TimeInSeconds, "TimeInSeconds"));
-
-                const bool isEyeTrackingDataAvailable = result == pvr_success && state.TimeInSeconds > 0;
-                if (isEyeTrackingDataAvailable) {
-                    TraceLoggingWriteTagged(local,
-                                            "HmdShimDriver_PvrEyeTrackingInfo",
-                                            TLArg(state.GazeTan[0].x, "LeftGazeTanX"),
-                                            TLArg(state.GazeTan[0].y, "LeftGazeTanY"),
-                                            TLArg(state.GazeTan[1].x, "RightGazeTanX"),
-                                            TLArg(state.GazeTan[1].y, "RightGazeTanY"));
-
-                    // Compute the gaze pitch/yaw angles by averaging both eyes.
-                    const float angleHorizontal = atanf((state.GazeTan[0].x + state.GazeTan[1].x) / 2.f);
-                    const float angleVertical = atanf((state.GazeTan[0].y + state.GazeTan[1].y) / 2.f);
+                    // Convert degrees to radians for trigonometric functions
+                    // Need to invert pitch because that's what mbucchia's code wants
+                    const float leftPitchRad = leftPitch * M_PI / 180.0f * -1.0f;
+                    const float leftYawRad = leftYaw * M_PI / 180.0f;
+                    const float rightPitchRad = rightPitch * M_PI / 180.0f * -1.0f;
+                    const float rightYawRad = rightYaw * M_PI / 180.0f;
 
                     // Use polar coordinates to create a unit vector.
                     DirectX::XMStoreFloat3(
                         (DirectX::XMFLOAT3*)&data.vGazeTarget,
-                        DirectX::XMVector3Normalize(DirectX::XMVectorSet(sinf(angleHorizontal) * cosf(angleVertical),
-                                                                         sinf(angleVertical),
-                                                                         -cosf(angleHorizontal) * cosf(angleVertical),
-                                                                         1)));
+                        DirectX::XMVector3Normalize(DirectX::XMVectorSet(
+                            (sin(leftYawRad) * cos(leftPitchRad) + sin(rightYawRad) * cos(rightPitchRad)) / 2,
+                            (sin(leftPitchRad) + sin(rightPitchRad)) / 2,
+                            (-cos(leftYawRad) * cos(leftPitchRad) - cos(rightYawRad) * cos(rightPitchRad)) / 2,
+                            1
+                        )
+                    ));
+
                     data.bValid = data.bTracked = data.bActive = true;
-                } else {
-                    // Fallback to identity.
-                    DirectX::XMStoreFloat3((DirectX::XMFLOAT3*)&data.vGazeTarget, DirectX::XMVectorSet(0, 0, -1, 1));
-                    data.bValid = data.bTracked = data.bActive = false;
+
+                    /*TraceLoggingWriteTagged(local,
+                                            "HmdShimDriver_OscEyeTrackingInfo",
+                                            TLArg(leftPitch, "LeftPitch"),
+                                            TLArg(leftYaw, "LeftYaw"),
+                                            TLArg(rightPitch, "RightPitch"),
+                                            TLArg(rightYaw, "RightYaw"));*/
+
+                    if (!(std::isnan(leftPitch) || std::isnan(leftYaw) || std::isnan(rightPitch) ||
+                          std::isnan(rightYaw))) {
+                        std::unique_lock lock(m_mutex);
+                    }
                 }
-                vr::VRDriverInput()->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data, 0.f);
+            } catch (osc::Exception& e) {
+                TraceLoggingWriteTagged(local, "VRChatOSCEyeTracker_ProcessMessage", TLArg(e.what(), "Error"));
+                //  Fallback to identity.
+                DirectX::XMStoreFloat3((DirectX::XMFLOAT3*)&data.vGazeTarget, DirectX::XMVectorSet(0, 0, -1, 1));
+                data.bValid = data.bTracked = data.bActive = false;
             }
-
-            DriverLog("Bye from HmdShimDriver::UpdateThread");
-
-            TraceLoggingWriteStop(local, "HmdShimDriver_UpdateThread");
+            vr::VRDriverInput()->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data, 0.f);
+            TraceLoggingWriteStop(local, "HmdShimDriver_OscMessage");
         }
 
         vr::ITrackedDeviceServerDriver* const m_shimmedDevice;
-        const pvrEnvHandle m_pvr;
-        const pvrSessionHandle m_pvrSession;
+        std::thread m_listeningThread;
+        UdpListeningReceiveSocket m_socket;
+        mutable std::mutex m_mutex;
 
         vr::TrackedDeviceIndex_t m_deviceIndex = vr::k_unTrackedDeviceIndexInvalid;
 
         std::atomic<bool> m_active = false;
-        std::thread m_updateThread;
-
+        
         vr::VRInputComponentHandle_t m_eyeTrackingComponent = 0;
     };
 } // namespace
 
 namespace driver_shim {
 
-    vr::ITrackedDeviceServerDriver* CreateHmdShimDriver(vr::ITrackedDeviceServerDriver* shimmedDriver,
-                                                        pvrEnvHandle pvr,
-                                                        pvrSessionHandle pvrSession) {
+    vr::ITrackedDeviceServerDriver* CreateHmdShimDriver(vr::ITrackedDeviceServerDriver* shimmedDriver) {
         try {
-            return new HmdShimDriver(shimmedDriver, pvr, pvrSession);
+            return new HmdShimDriver(shimmedDriver);
         } catch (EyeTrackerNotSupportedException&) {
             return shimmedDriver;
         }

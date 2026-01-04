@@ -28,11 +28,9 @@
 
 namespace driver_shim {
 
-    void InstallShimDriverHook(pvrEnvHandle pvr, pvrSessionHandle pvrSession);
+    void InstallShimDriverHook();
     bool IsTargetDriver(void* returnAddress);
 
-    vr::ITrackedDeviceServerDriver* CreateHmdShimDriver(vr::ITrackedDeviceServerDriver* shimmedDriver,
-                                                        pvrEnvHandle pvr,
-                                                        pvrSessionHandle pvrSession);
+    vr::ITrackedDeviceServerDriver* CreateHmdShimDriver(vr::ITrackedDeviceServerDriver* shimmedDriver);
 
 } // namespace driver_shim

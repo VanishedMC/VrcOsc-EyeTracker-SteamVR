@@ -1,6 +1,6 @@
 {
 	"alwaysActivate": true,
-	"name" : "PimaxEyeTracking",
+	"name" : "VrcOscEyeTracking",
 	"redirectsDisplay": true,
 
 	"hmd_presence" :

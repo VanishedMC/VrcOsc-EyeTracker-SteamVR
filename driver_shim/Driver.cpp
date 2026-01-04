@@ -54,44 +54,11 @@ namespace {
 
             // Detect whether we should attempt to shim the target driver.
             if (!m_isLoaded) {
-                bool loadDriver = false;
-                try {
-                    pvrResult result = pvr_initialise(&m_pvr);
-                    if (result != pvr_success) {
-                        TraceLoggingWriteTagged(local, "Driver_Init_PvrInitError", TLArg((int)result, "Error"));
-                        throw EyeTrackerNotSupportedException();
-                    }
-
-                    result = pvr_createSession(m_pvr, &m_pvrSession);
-                    if (result != pvr_success) {
-                        TraceLoggingWriteTagged(local, "Driver_Init_PvrCreateError", TLArg((int)result, "Error"));
-                        throw EyeTrackerNotSupportedException();
-                    }
-
-                    pvrHmdInfo info{};
-                    result = pvr_getHmdInfo(m_pvrSession, &info);
-                    if (result != pvr_success) {
-                        TraceLoggingWriteTagged(local, "Driver_Init_HmdInfoError", TLArg((int)result, "Error"));
-                        throw EyeTrackerNotSupportedException();
-                    }
-
-                    // Look for a Pimax Crystal or Pimax Crystal Super.
-                    if (!(info.VendorId == 0x34A4 && (info.ProductId == 0x0012 || info.ProductId == 0x0040))) {
-                        TraceLoggingWriteTagged(local,
-                                                "Driver_Init_HmdNotSupported",
-                                                TLArg(info.VendorId, "VendorId"),
-                                                TLArg(info.ProductId, "ProductId"));
-                        DriverLog("Pimax Headset Product 0x%04x is not compatible", info.ProductId);
-                        throw EyeTrackerNotSupportedException();
-                    }
-
-                    loadDriver = true;
-                } catch (EyeTrackerNotSupportedException&) {
-                }
+                bool loadDriver = true; // TODO implement
 
                 if (loadDriver) {
                     DriverLog("Installing IVRServerDriverHost::TrackedDeviceAdded hook");
-                    InstallShimDriverHook(m_pvr, m_pvrSession);
+                    InstallShimDriverHook();
                     m_isLoaded = true;
                 }
             }
@@ -103,9 +70,6 @@ namespace {
 
         void Cleanup() override {
             VR_CLEANUP_SERVER_DRIVER_CONTEXT();
-
-            pvr_destroySession(m_pvrSession);
-            pvr_shutdown(m_pvr);
         }
 
         const char* const* GetInterfaceVersions() override {
@@ -123,8 +87,6 @@ namespace {
         void LeaveStandby() override {};
 
         bool m_isLoaded = false;
-        pvrEnvHandle m_pvr = nullptr;
-        pvrSessionHandle m_pvrSession = nullptr;
     };
 } // namespace
 

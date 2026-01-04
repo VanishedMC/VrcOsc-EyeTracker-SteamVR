@@ -37,6 +37,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SampleShared_win32", "exter
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EyeGazeInteractionWin32", "external\OpenXR-MixedReality\samples\EyeGazeInteractionUwp\EyeGazeInteractionWin32.vcxproj", "{A4D2019B-622D-49B9-9510-16877979807A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencies", "{E7C3CAAF-4FBA-4197-A487-C6EAC8E5808C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oscpack", "oscpack\oscpack.vcxproj", "{3461493E-AA37-49DA-A26B-9622B98AF8D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -93,6 +97,14 @@ Global
 		{A4D2019B-622D-49B9-9510-16877979807A}.Release|x64.Build.0 = Release|x64
 		{A4D2019B-622D-49B9-9510-16877979807A}.Release|x86.ActiveCfg = Release|Win32
 		{A4D2019B-622D-49B9-9510-16877979807A}.Release|x86.Build.0 = Release|Win32
+		{3461493E-AA37-49DA-A26B-9622B98AF8D6}.Debug|x64.ActiveCfg = Debug|x64
+		{3461493E-AA37-49DA-A26B-9622B98AF8D6}.Debug|x64.Build.0 = Debug|x64
+		{3461493E-AA37-49DA-A26B-9622B98AF8D6}.Debug|x86.ActiveCfg = Debug|Win32
+		{3461493E-AA37-49DA-A26B-9622B98AF8D6}.Debug|x86.Build.0 = Debug|Win32
+		{3461493E-AA37-49DA-A26B-9622B98AF8D6}.Release|x64.ActiveCfg = Release|x64
+		{3461493E-AA37-49DA-A26B-9622B98AF8D6}.Release|x64.Build.0 = Release|x64
+		{3461493E-AA37-49DA-A26B-9622B98AF8D6}.Release|x86.ActiveCfg = Release|Win32
+		{3461493E-AA37-49DA-A26B-9622B98AF8D6}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -104,6 +116,7 @@ Global
 		{A758AF22-F54F-4C74-BF85-05A377B5892E} = {48588668-6449-43AE-9C65-6C9AADC00B7F}
 		{269C12FA-E68D-470B-A734-4701034306BD} = {48588668-6449-43AE-9C65-6C9AADC00B7F}
 		{A4D2019B-622D-49B9-9510-16877979807A} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{3461493E-AA37-49DA-A26B-9622B98AF8D6} = {E7C3CAAF-4FBA-4197-A487-C6EAC8E5808C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {578423DD-D0F8-42EA-9B55-38083560A35F}

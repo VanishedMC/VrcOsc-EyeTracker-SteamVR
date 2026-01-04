@@ -23,20 +23,23 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
+#define _USE_MATH_DEFINES
 #include <windows.h>
 #include <DirectXMath.h>
 #include <TraceLoggingActivity.h>
 #include <TraceLoggingProvider.h>
-
+#include <winsock2.h>
 #include <atomic>
 #include <memory>
 #include <thread>
+#include <cmath>
+#include <mutex>
+#include <chrono>
+#include <vector>
+
+using namespace std::chrono_literals;
 
 #include <openvr_driver.h>
 #include <driverlog.h>
-
-#include <PVR.h>
-#include <PVR_API.h>
-#include <PVR_Interface.h>
 
 #include <detours.h>
