@@ -16,7 +16,11 @@ Download [the latest release](https://github.com/VanishedMC/VrcOsc-EyeTracker-St
 - SHUT DOWN STEAMVR ENTIRELY  
 - Run the Register-Driver.bat script.  
 - If running with a Bigscreen beyond, disable the Bigscreen driver  
-- You can test whether eye tracking is working by running the EyeGazeInteractionWin32.exe application inside the test/ folder.  
+- Configure your OSC program to send data to port `9020`
+  
+<img width="500" alt="Baballonia Desktop_BfcUvdCaSQ" src="https://github.com/user-attachments/assets/963e39a1-70cd-4da6-8473-63067373e0ab" />
+<img width="500" alt="BeyondET_QHsBn5yFY0" src="https://github.com/user-attachments/assets/1e3729df-b411-4762-9c2b-4c7131cd3f13" />
+
 
 # Credits
 This program is a combination of MBucchia's [Pimax-EyeTracker-SteamVR](https://github.com/mbucchia/Pimax-EyeTracker-SteamVR) and RidgeVR's [OpenXR-Eye-Trackers-VRC](https://github.com/RidgeXR/OpenXR-Eye-Trackers-VRC/). MIT license applies
