@@ -5,6 +5,7 @@ VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "driver_shim", "driver_shim\driver_shim.vcxproj", "{5D913C1C-E92F-4833-A253-C73CAD82E038}"
 	ProjectSection(ProjectDependencies) = postProject
+		{3461493E-AA37-49DA-A26B-9622B98AF8D6} = {3461493E-AA37-49DA-A26B-9622B98AF8D6}
 		{A4D2019B-622D-49B9-9510-16877979807A} = {A4D2019B-622D-49B9-9510-16877979807A}
 	EndProjectSection
 EndProject
