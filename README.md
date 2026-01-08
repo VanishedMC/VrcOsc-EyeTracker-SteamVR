@@ -15,11 +15,12 @@ Download [the latest release](https://github.com/VanishedMC/VrcOsc-EyeTracker-St
 - Unzip in a folder that will be permanent (ie: that you will not move or be renamed).  
 - SHUT DOWN STEAMVR ENTIRELY  
 - Run the Register-Driver.bat script.  
-- If running with a Bigscreen beyond, disable the Bigscreen driver  
-- Configure your OSC program to send data to port `9020`
+- Configure babble to send data to port `9020`
+- Enable `Use Native VRC Eye Tracking`
+- Optionally, disable the VRCFT module entirely to decrease OSC traffic
   
 <img width="500" alt="Baballonia Desktop_BfcUvdCaSQ" src="https://github.com/user-attachments/assets/963e39a1-70cd-4da6-8473-63067373e0ab" />
-<img width="500" alt="BeyondET_QHsBn5yFY0" src="https://github.com/user-attachments/assets/1e3729df-b411-4762-9c2b-4c7131cd3f13" />
+<img width="500" alt="Baballonia Desktop_e6rGbfx1Aw" src="https://github.com/user-attachments/assets/4723652f-b285-4b03-8e1f-a7e453b8b177" />
 
 
 # Credits
